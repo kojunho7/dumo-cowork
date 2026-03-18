@@ -21,8 +21,8 @@ const Sidebar: Component<SidebarProps> = (props) => {
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-container">
-          <img src="/logo.png" alt="Kuse Cowork" class="logo-image" />
-          <h1 class="logo-text">Kuse Cowork</h1>
+          <img src="/logo.png" alt="DUMO Cowork" class="logo-image" />
+          <h1 class="logo-text">DUMO Cowork</h1>
         </div>
         <div class="mode-tabs">
           <button

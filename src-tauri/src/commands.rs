@@ -646,7 +646,7 @@ pub async fn send_chat_with_tools(
         }
     }
 
-    config.system_prompt = format!(r#"You are Kuse Cowork, an AI assistant that helps users for non dev work.
+    config.system_prompt = format!(r#"You are DUMO Cowork, an AI assistant that helps users for non dev work.
 
 You have access to tools that allow you to read and write files, execute commands, and search through codebases.
 

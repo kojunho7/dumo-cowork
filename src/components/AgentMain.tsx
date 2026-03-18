@@ -63,7 +63,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
         when={isConfigured()}
         fallback={
           <div class="agent-setup">
-            <h2>Welcome to Kuse Cowork</h2>
+            <h2>Welcome to DUMO Cowork</h2>
             <p>Configure your API key to start using the agent</p>
             <button onClick={toggleSettings}>Open Settings</button>
           </div>

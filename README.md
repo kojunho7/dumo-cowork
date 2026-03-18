@@ -1,7 +1,7 @@
 
 
 <div align="center">
-  <img src="public/kuse-logo.png" alt="Kuse Cowork Logo" width="200"/>
+  <img src="public/kuse-logo.png" alt="DUMO Cowork Logo" width="200"/>
 </div>
 
 
@@ -14,16 +14,16 @@
 </div>
 
 
-# Kuse Cowork：An Open-Source, Model-Agnostic [Alternative to Claude Cowork](https://www.claude-cowork.ai/)
->Kuse Cowork is a lightweight, open-source desktop cowork agent built for people who want local-first execution, full model freedom, and real privacy control.
+# DUMO Cowork：An Open-Source, Model-Agnostic [Alternative to Claude Cowork](https://www.claude-cowork.ai/)
+>DUMO Cowork is a lightweight, open-source desktop cowork agent built for people who want local-first execution, full model freedom, and real privacy control.
 
 **Works with any models, BYOK, written in Rust** 🚀
 
-[*Demo video: Kuse Cowork in action*](https://github.com/user-attachments/assets/e128e657-c1be-4134-828d-01a9a94ef055)
+[*Demo video: DUMO Cowork in action*](https://github.com/user-attachments/assets/e128e657-c1be-4134-828d-01a9a94ef055)
 
 It is an open-source desktop cowork agent created by [Kuse](https://www.kuse.ai/), an AI document generator & Presentation Maker from your knowledge base. Transform docs, PDFs, YouTube, and images into formatted docs, infographics, mind maps, and flashcards—instantly. Stunning, professional, and ready to use.
 
-## ✨ Why Kuse Cowork?
+## ✨ Why DUMO Cowork?
 
 ### 🔐 **BYOK (Bring Your Own Key)**
 Use your own API keys or even **bring your own local models** for ultimate privacy control.
@@ -126,8 +126,8 @@ Will update to a clean release build soon.
 
 ```bash
 # Clone the repo
-git clone https://github.com/kuse-ai/kuse-cowork.git
-cd kuse-cowork
+git clone https://github.com/kuse-ai/dumo-cowork.git
+cd dumo-cowork
 
 # Install dependencies
 npm install
@@ -142,7 +142,7 @@ npm run tauri build
 ### Project Structure
 
 ```
-kuse-cowork/
+dumo-cowork/
 ├── src/                    # Frontend (SolidJS + TypeScript)
 │   ├── components/         # UI components
 │   ├── lib/               # Utilities (API clients, MCP)
@@ -164,7 +164,7 @@ kuse-cowork/
 
 ### API Providers
 
-Kuse Cowork supports multiple AI providers:
+DUMO Cowork supports multiple AI providers:
 
 - **Anthropic Claude**: Direct API integration
 - **OpenAI GPT**: Full GPT model support
@@ -185,7 +185,7 @@ All settings are stored locally and never shared:
 ## 🛡️ Security & Privacy
 
 ### Container Isolation
-Kuse Cowork uses Docker containers to isolate all external command execution:
+DUMO Cowork uses Docker containers to isolate all external command execution:
 - **Complete isolation** from your host system
 - **Secure networking** with controlled access
 - **Resource limits** to prevent abuse

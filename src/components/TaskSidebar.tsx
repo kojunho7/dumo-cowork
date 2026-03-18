@@ -47,8 +47,8 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
     <aside class="task-sidebar">
       <div class="sidebar-header">
         <div class="logo-container">
-          <img src="/logo.png" alt="Kuse Cowork" class="logo-image" />
-          <h1 class="app-title">Kuse Cowork</h1>
+          <img src="/logo.png" alt="DUMO Cowork" class="logo-image" />
+          <h1 class="app-title">DUMO Cowork</h1>
         </div>
       </div>
 

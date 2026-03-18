@@ -317,7 +317,7 @@ const App: Component = () => {
 const LoadingScreen: Component = () => (
   <div class="loading-screen">
     <div class="loading-content">
-      <h1>Kuse Cowork</h1>
+      <h1>DUMO Cowork</h1>
       <p>Loading...</p>
     </div>
   </div>

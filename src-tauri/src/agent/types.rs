@@ -119,7 +119,7 @@ impl Default for AgentConfig {
     }
 }
 
-pub const DEFAULT_SYSTEM_PROMPT: &str = r#"You are Kuse Cowork, an AI agent that helps users with software development tasks.
+pub const DEFAULT_SYSTEM_PROMPT: &str = r#"You are DUMO Cowork, an AI agent that helps users with software development tasks.
 
 You have access to tools that allow you to read and write files, execute commands, and search through codebases.
 
@@ -159,7 +159,7 @@ After outputting the plan, immediately begin executing each step. As you work th
 
 ## Docker Integration
 The project_path (if provided) is automatically mounted to /workspace in containers.
-Skills directory (~/.kuse-cowork/skills) is automatically mounted to /skills (read-only).
+Skills directory (~/.dumo-cowork/skills) is automatically mounted to /skills (read-only).
 Default image: python:3.11-alpine. Also available: ubuntu:latest, node:20, rust:alpine
 
 ## Workflow

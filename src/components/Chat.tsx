@@ -154,7 +154,7 @@ const Chat: Component = () => {
         when={isConfigured()}
         fallback={
           <div class="chat-setup">
-            <h2>Welcome to Kuse Cowork</h2>
+            <h2>Welcome to DUMO Cowork</h2>
             <p>Configure your API key to get started</p>
             <button onClick={toggleSettings}>Open Settings</button>
           </div>

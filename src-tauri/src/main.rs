@@ -4,5 +4,5 @@
 )]
 
 fn main() {
-    kuse_cowork_lib::run();
+    dumo_cowork_lib::run();
 }
