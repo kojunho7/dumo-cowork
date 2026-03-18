@@ -14,6 +14,7 @@ export interface Settings {
   providerKeys: Record<string, string>;  // Provider-specific API keys
   openaiOrganization?: string;  // Optional OpenAI Organization ID
   openaiProject?: string;  // Optional OpenAI Project ID
+  language: "ko" | "en"; // UI language
 }
 
 // Provider configuration type
@@ -224,12 +225,34 @@ const DEFAULT_SETTINGS: Settings = {
   maxTokens: 4096,
   temperature: 0.7,
   providerKeys: {},
+  language: "ko",
 };
 
 // Get provider ID from model
 export function getProviderFromModel(modelId: string): string {
   const model = AVAILABLE_MODELS.find(m => m.id === modelId);
-  return model?.provider || "anthropic";
+  if (model) {
+    return model.provider;
+  }
+
+  // Fallback string matching for dynamically fetched models
+  const lower = modelId.toLowerCase();
+  
+  if (lower.includes("claude")) {
+    return "anthropic";
+  } else if ((lower.includes("gpt") || lower.startsWith("o1") || lower.startsWith("o3") || lower.startsWith("gpt-")) && !lower.includes("/")) {
+    return "openai";
+  } else if (lower.includes("gemini")) {
+    return "google";
+  } else if (lower.includes("minimax")) {
+    return "minimax";
+  } else if (lower.startsWith("anthropic/") || lower.startsWith("openai/") || lower.startsWith("meta-llama/") || lower.startsWith("deepseek/")) {
+    return "openrouter";
+  } else if (lower.includes(":")) {
+    return "ollama";
+  }
+
+  return "anthropic";
 }
 
 // Check if a model uses the OpenAI Responses API (GPT-5 series)
@@ -262,6 +285,7 @@ function fromApiSettings(api: ApiSettings): Settings {
     providerKeys,
     openaiOrganization: api.openai_organization,
     openaiProject: api.openai_project,
+    language: (api.language === "en" ? "en" : "ko") as "ko" | "en",
   };
 }
 
@@ -282,6 +306,7 @@ function toApiSettings(settings: Settings): ApiSettings {
     provider_keys: providerKeys,
     openai_organization: settings.openaiOrganization,
     openai_project: settings.openaiProject,
+    language: settings.language,
   };
 }
 

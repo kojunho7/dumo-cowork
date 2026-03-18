@@ -36,6 +36,9 @@ pub struct Settings {
     /// Optional OpenAI Project ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub openai_project: Option<String>,
+    /// UI Language preference
+    #[serde(default)]
+    pub language: String,
 }
 
 impl Default for Settings {
@@ -50,6 +53,7 @@ impl Default for Settings {
             provider_keys: HashMap::new(),
             openai_organization: None,
             openai_project: None,
+            language: "ko".to_string(),
         }
     }
 }
@@ -283,6 +287,7 @@ impl Database {
                         settings.provider_keys = keys;
                     }
                 }
+                "language" => settings.language = value,
                 _ => {}
             }
         }
@@ -324,6 +329,7 @@ impl Database {
             ("temperature", settings.temperature.to_string()),
             ("provider", provider),
             ("provider_keys", provider_keys_json),
+            ("language", settings.language.clone()),
         ];
 
         for (key, value) in pairs {

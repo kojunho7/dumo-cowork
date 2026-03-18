@@ -1,8 +1,8 @@
 /* Kuse Design System */
-@import url('https://rsms.me/inter/inter.css');
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
 :root {
+  /* Fonts */
+  --font-sans: "Inter Variable", InterVariable, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+
   /* Brand Colors (11-step scale) */
   --brand-050: #F5F1F0;
   --brand-100: #E9DDDB;
@@ -95,7 +95,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', 'Apple SD Gothic Neo', 'Pretendard', 'Malgun Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   background: var(--background);
   color: var(--foreground);
   min-height: 100vh;
@@ -146,8 +146,8 @@ button {
   color: var(--primary-foreground);
   padding: 0.625rem 1.25rem;
   border-radius: var(--radius);
-  font-family: 'Inter', 'Pretendard', sans-serif;
-  font-size: 0.875rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
   font-weight: 500;
   transition: all var(--transition-base);
   box-shadow: var(--shadow-xs);
@@ -193,8 +193,8 @@ input, textarea, select {
   color: var(--foreground);
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
-  font-family: 'Inter', 'Pretendard', sans-serif;
-  font-size: 0.875rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
   width: 100%;
   transition: all var(--transition-base);
 }

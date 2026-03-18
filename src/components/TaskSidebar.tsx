@@ -1,5 +1,6 @@
 import { Component, For, Show } from "solid-js";
 import { Task } from "../lib/tauri-api";
+import { useI18n } from "../i18n";
 import "./TaskSidebar.css";
 
 interface TaskSidebarProps {
@@ -10,9 +11,13 @@ interface TaskSidebarProps {
   onSettingsClick: () => void;
   onSkillsClick: () => void;
   onMCPClick: () => void;
+  onLogout?: () => void;
+  userName?: string;
+  userEmail?: string;
 }
 
 const TaskSidebar: Component<TaskSidebarProps> = (props) => {
+  const { t } = useI18n();
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -33,11 +38,11 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) {
-      return "Today";
+      return t("sidebar.today");
     } else if (days === 1) {
-      return "Yesterday";
+      return t("sidebar.yesterday");
     } else if (days < 7) {
-      return `${days} days ago`;
+      return t("sidebar.daysAgo", { days });
     } else {
       return date.toLocaleDateString();
     }
@@ -47,19 +52,19 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
     <aside class="task-sidebar">
       <div class="sidebar-header">
         <div class="logo-container">
-          <img src="/logo.png" alt="DUMO Cowork" class="logo-image" />
+          <img src="/icon_512.png" alt="DUMO Cowork" class="logo-image" />
           <h1 class="app-title">DUMO Cowork</h1>
         </div>
       </div>
 
       <div class="task-list">
-        <div class="task-list-header">Tasks</div>
+        <div class="task-list-header">{t("sidebar.tasks")}</div>
         <Show
           when={props.tasks.length > 0}
           fallback={
             <div class="no-tasks">
-              <p>No tasks yet</p>
-              <p class="hint">Create a new task to get started</p>
+              <p>{t("sidebar.noTasks")}</p>
+              <p class="hint">{t("sidebar.createTaskHint")}</p>
             </div>
           }
         >
@@ -91,21 +96,41 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
       </div>
 
       <div class="sidebar-footer">
+        <Show when={props.userName || props.userEmail}>
+          <div class="sidebar-user">
+            <span class="user-avatar">👤</span>
+            <div class="user-details">
+              <span class="user-name">
+                {props.userName === props.userEmail && props.userEmail
+                  ? props.userEmail.split('@')[0]
+                  : props.userName || props.userEmail}
+              </span>
+              <Show when={props.userEmail}>
+                <span class="user-email">{props.userEmail}</span>
+              </Show>
+            </div>
+          </div>
+        </Show>
         <button
           class="footer-btn primary-btn"
           onClick={props.onSkillsClick}
         >
-          Skills
+          {t("sidebar.agentSkills")}
         </button>
         <button
           class="footer-btn primary-btn"
           onClick={props.onMCPClick}
         >
-          MCPs
+          {t("sidebar.mcpServers")}
         </button>
         <button class="footer-btn primary-btn" onClick={props.onSettingsClick}>
-          Settings
+          {t("sidebar.settings")}
         </button>
+        <Show when={props.onLogout}>
+          <button class="footer-btn logout-btn" onClick={props.onLogout}>
+            {t("sidebar.logout")}
+          </button>
+        </Show>
       </div>
     </aside>
   );

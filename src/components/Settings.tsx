@@ -1,204 +1,108 @@
-import { Component, createSignal, createMemo, Show } from "solid-js";
-import { useSettings, AVAILABLE_MODELS, PROVIDER_PRESETS, getProviderFromModel } from "../stores/settings";
-import { testConnection } from "../lib/tauri-api";
-import ModelSelector from "./ModelSelector";
+import { Component, createSignal, createEffect, For, Show } from "solid-js";
+import { useSettings } from "../stores/settings";
+import { useAuth } from "../stores/auth";
+import { fetchModels, testCoworkConnection, type CoworkModel } from "../lib/dumo-works-api";
+import { useI18n } from "../i18n";
 import "./Settings.css";
 
 const Settings: Component = () => {
   const { settings, updateSetting, toggleSettings } = useSettings();
+  const { authState } = useAuth();
   const [testing, setTesting] = createSignal(false);
   const [testResult, setTestResult] = createSignal<string | null>(null);
+  const [serverModels, setServerModels] = createSignal<CoworkModel[]>([]);
+  const [modelsLoading, setModelsLoading] = createSignal(false);
+  const { t, setLocale } = useI18n();
 
-
-  // Get current selected model's provider info
-  const currentProviderInfo = createMemo(() => {
-    const model = AVAILABLE_MODELS.find(m => m.id === settings().model);
-    if (model) {
-      return PROVIDER_PRESETS[model.provider];
+  // Load models from dumo-works server on mount
+  createEffect(async () => {
+    if (authState().isAuthenticated) {
+      setModelsLoading(true);
+      try {
+        const models = await fetchModels();
+        setServerModels(models);
+      } catch (e) {
+        console.error("Failed to fetch models:", e);
+      } finally {
+        setModelsLoading(false);
+      }
     }
-    // If not in preset list, check baseUrl to determine provider
-    const baseUrl = settings().baseUrl;
-    if (baseUrl.includes("localhost:11434") || baseUrl.includes("127.0.0.1:11434")) {
-      return PROVIDER_PRESETS["ollama"];
-    }
-    if (baseUrl.includes("localhost:8080")) {
-      return PROVIDER_PRESETS["localai"];
-    }
-    // Other local services - use custom preset
-    if (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) {
-      return PROVIDER_PRESETS["custom"];
-    }
-    return null;
-  });
-
-  // Check if it's a true local service (authType === "none", no API Key needed at all)
-  const isNoAuthProvider = createMemo(() => {
-    const info = currentProviderInfo();
-    return info?.authType === "none";
-  });
-
-  // Check if API key is optional (custom provider - can work with or without key)
-  const isApiKeyOptional = createMemo(() => {
-    const providerId = getProviderFromModel(settings().model);
-    // Custom provider with localhost URL - API key is optional
-    if (providerId === "custom") {
-      return true;
-    }
-    return false;
   });
 
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
     try {
-      console.log("Testing connection...");
-      const result = await testConnection();
-      console.log("Test result:", result, typeof result);
+      const result = await testCoworkConnection();
       setTestResult(result);
     } catch (e) {
-      console.error("Test connection error:", e);
       const errorMsg = e instanceof Error ? e.message : String(e);
       setTestResult(`Error: ${errorMsg}`);
     }
     setTesting(false);
   };
 
-  // const handleSave = async () => {
-  //   setSaving(true);
-  //   await saveAllSettings(settings());
-  //   setSaving(false);
-  // };
-
   return (
     <div class="settings">
       <div class="settings-header">
-        <h2>Settings</h2>
+        <h2>{t("settings.title")}</h2>
         <button class="close-btn" onClick={toggleSettings}>
-          Close
+          {t("common.close")}
         </button>
       </div>
 
       <div class="settings-content">
         <div class="settings-section">
-          <h3>Model Selection</h3>
-
-          <ModelSelector
-            value={settings().model}
-            onChange={(modelId, baseUrl) => {
-              updateSetting("model", modelId);
-              if (baseUrl) {
-                updateSetting("baseUrl", baseUrl);
-              }
-            }}
-          />
+          <h3>{t("settings.serverConnection")}</h3>
+          <div class="server-status">
+            <span class="status-dot connected" />
+            <span>{t("settings.connectedTo")}</span>
+          </div>
+          <Show when={authState().user}>
+            <p class="hint" style={{ margin: "0.5rem 0 0" }}>
+              {(() => {
+                const user = authState().user;
+                if (!user) return "";
+                if (user.displayName === user.email) {
+                  return t("settings.loginInfo", { name: user.displayName, email: "" }).replace(" ()", "");
+                }
+                return t("settings.loginInfo", {
+                  name: user.displayName,
+                  email: user.email
+                });
+              })()}
+            </p>
+          </Show>
         </div>
 
         <div class="settings-section">
-          <h3>API Configuration</h3>
-
-          {/* Local service notice - only for providers that truly don't need auth */}
-          <Show when={isNoAuthProvider()}>
-            <div class="local-service-notice">
-              <span class="notice-icon">🏠</span>
-              <div class="notice-content">
-                <strong>Local Service - No API Key Required</strong>
-                <p>Please ensure {currentProviderInfo()?.name} is running locally</p>
-              </div>
-            </div>
-          </Show>
-
-          {/* API Key input - show for all providers except those with authType === "none" */}
-          <Show when={!isNoAuthProvider()}>
+          <h3>{t("settings.modelSelection")}</h3>
+          <Show
+            when={!modelsLoading()}
+            fallback={<p class="hint">{t("settings.loadingModels")}</p>}
+          >
             <div class="form-group">
-              <label for="apiKey">
-                API Key
-                <Show when={isApiKeyOptional()}>
-                  <span class="optional-tag">(Optional)</span>
-                </Show>
-              </label>
-              <input
-                id="apiKey"
-                type="password"
-                value={settings().apiKey}
-                onInput={(e) => updateSetting("apiKey", e.currentTarget.value)}
-                placeholder={currentProviderInfo()?.authType === "bearer" ? "sk-..." : "your-api-key"}
-              />
-              <span class="hint">
-                <Show
-                  when={currentProviderInfo()?.id === "anthropic"}
-                  fallback={
-                    <Show
-                      when={isApiKeyOptional()}
-                      fallback={<>Get API Key from {currentProviderInfo()?.name}</>}
-                    >
-                      API key is optional for custom endpoints
-                    </Show>
-                  }
-                >
-                  Get your API key from{" "}
-                  <a href="https://console.anthropic.com/settings/keys" target="_blank">
-                    Anthropic Console
-                  </a>
-                </Show>
-              </span>
+              <select
+                class="model-select"
+                value={settings().model}
+                onChange={(e) => updateSetting("model", e.currentTarget.value)}
+              >
+                <For each={serverModels()}>
+                  {(model) => (
+                    <option value={model.id} selected={model.isDefault}>
+                      {model.name}{model.isDefault ? t("settings.defaultModel") : ""}
+                    </option>
+                  )}
+                </For>
+              </select>
             </div>
           </Show>
+        </div>
 
+        <div class="settings-section">
+          <h3>{t("settings.generationSettings")}</h3>
           <div class="form-group">
-            <label for="baseUrl">API Base URL</label>
-            <input
-              id="baseUrl"
-              type="text"
-              value={settings().baseUrl}
-              onInput={(e) => updateSetting("baseUrl", e.currentTarget.value)}
-              placeholder={currentProviderInfo()?.baseUrl || "https://api.example.com"}
-            />
-            <span class="hint">
-              {isNoAuthProvider()
-                ? "Ensure the address matches your local service configuration"
-                : "Customize proxy or compatible API address"}
-            </span>
-          </div>
-
-          {/* OpenAI Organization and Project ID - only show for OpenAI provider */}
-          <Show when={currentProviderInfo()?.id === "openai"}>
-            <div class="form-group">
-              <label for="openaiOrg">
-                Organization ID
-                <span class="optional-tag">(Optional)</span>
-              </label>
-              <input
-                id="openaiOrg"
-                type="text"
-                value={settings().openaiOrganization || ""}
-                onInput={(e) => updateSetting("openaiOrganization", e.currentTarget.value || undefined)}
-                placeholder="org-..."
-              />
-              <span class="hint">
-                Your OpenAI organization ID (if you belong to multiple organizations)
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="openaiProject">
-                Project ID
-                <span class="optional-tag">(Optional)</span>
-              </label>
-              <input
-                id="openaiProject"
-                type="text"
-                value={settings().openaiProject || ""}
-                onInput={(e) => updateSetting("openaiProject", e.currentTarget.value || undefined)}
-                placeholder="proj_..."
-              />
-              <span class="hint">
-                Your OpenAI project ID (for project-level access control)
-              </span>
-            </div>
-          </Show>
-
-          <div class="form-group">
-            <label for="maxTokens">Max Tokens</label>
+            <label for="maxTokens">{t("settings.maxTokens")}</label>
             <input
               id="maxTokens"
               type="number"
@@ -210,17 +114,38 @@ const Settings: Component = () => {
               max={200000}
             />
           </div>
+        </div>
 
+        <div class="settings-section">
+          <h3>{t("settings.language")}</h3>
+          <div class="form-group">
+            <select
+              class="model-select"
+              value={settings().language}
+              onChange={(e) => {
+                const newLang = e.currentTarget.value as "ko" | "en";
+                updateSetting("language", newLang);
+                setLocale(newLang);
+              }}
+            >
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>{t("settings.connectionTest")}</h3>
           <div class="form-group">
             <button
               class="test-btn"
               onClick={handleTest}
-              disabled={testing() || (!isNoAuthProvider() && !isApiKeyOptional() && !settings().apiKey)}
+              disabled={testing()}
             >
-              {testing() ? "Testing..." : "Test Connection"}
+              {testing() ? t("common.testing") : t("settings.testConnectionBtn")}
             </button>
             {testResult() === "success" && (
-              <span class="test-success">✓ Connection successful!</span>
+              <span class="test-success">{t("common.success")}</span>
             )}
             {testResult() && testResult() !== "success" && (
               <span class="test-error">{testResult()}</span>
@@ -229,11 +154,11 @@ const Settings: Component = () => {
         </div>
 
         <div class="settings-section">
-          <h3>Data Storage</h3>
+          <h3>{t("settings.dataStorage")}</h3>
           <p class="hint" style={{ margin: 0 }}>
-            All data is stored locally on your computer in SQLite database.
+            {t("settings.storageInfo1")}
             <br />
-            API key is securely stored and never sent to any server except Anthropic's API.
+            {t("settings.storageInfo2")}
           </p>
         </div>
       </div>

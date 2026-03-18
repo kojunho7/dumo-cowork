@@ -9,6 +9,7 @@ import {
   disconnectMCPServer,
   getMCPServerStatuses
 } from "../lib/mcp-api";
+import { useI18n } from "../i18n";
 import "./MCPSettings.css";
 
 interface MCPSettingsProps {
@@ -21,6 +22,7 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
   const [showAddForm, setShowAddForm] = createSignal(false);
   const [editingServer, setEditingServer] = createSignal<MCPServerConfig | null>(null);
   const [loading, setLoading] = createSignal(false);
+  const { t } = useI18n();
 
   // Form state
   const [formData, setFormData] = createSignal({
@@ -154,16 +156,16 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
   return (
     <div class="mcp-settings">
       <div class="mcp-settings-header">
-        <h2>MCP Settings</h2>
+        <h2>{t("mcp.title")}</h2>
         <div class="header-actions">
           <button class="add-btn" onClick={() => setShowAddForm(true)}>
-            Add Server
+            {t("mcp.addServer")}
           </button>
           <button class="refresh-btn" onClick={refreshData} disabled={loading()}>
-            {loading() ? "Loading..." : "Refresh"}
+            {loading() ? t("mcp.loading") : t("mcp.refresh")}
           </button>
           <button class="close-btn" onClick={props.onClose}>
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>
@@ -171,20 +173,20 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
       <div class="mcp-settings-content">
         {showAddForm() && (
           <div class="add-form">
-            <h3>{editingServer() ? "Edit Server" : "Add MCP Server"}</h3>
+            <h3>{editingServer() ? t("mcp.editServer") : t("mcp.addServer")}</h3>
 
             <div class="form-group">
-              <label>Name</label>
+              <label>{t("mcp.name")}</label>
               <input
                 type="text"
                 value={formData().name}
                 onInput={(e) => setFormData(prev => ({ ...prev, name: e.currentTarget.value }))}
-                placeholder="Server name"
+                placeholder={t("mcp.namePlaceholder")}
               />
             </div>
 
             <div class="form-group">
-              <label>Remote MCP server URL</label>
+              <label>{t("mcp.remoteUrl")}</label>
               <input
                 type="url"
                 value={formData().serverUrl}
@@ -194,10 +196,10 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
             </div>
 
             <details class="advanced-settings">
-              <summary>Advanced settings</summary>
+              <summary>{t("mcp.advancedSettings")}</summary>
               <div class="advanced-content">
                 <div class="form-group">
-                  <label>OAuth Client ID (optional)</label>
+                  <label>{t("mcp.oauthClientId")}</label>
                   <input
                     type="text"
                     value={formData().oauthClientId}
@@ -207,7 +209,7 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
                 </div>
 
                 <div class="form-group">
-                  <label>OAuth Client Secret (optional)</label>
+                  <label>{t("mcp.oauthClientSecret")}</label>
                   <input
                     type="password"
                     value={formData().oauthClientSecret}
@@ -219,27 +221,25 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
             </details>
 
             <div class="warning-text">
-              <strong>Security Notice:</strong> Only use connectors from developers you trust.
-              MCP servers have access to tools and data as configured, and this app cannot verify
-              that they will work as intended or that they won't change.
+              <strong>{t("mcp.securityNoticeTitle")}</strong> {t("mcp.securityNoticeText")}
             </div>
 
             <div class="form-actions">
               <button class="save-btn" onClick={handleSave}>
-                {editingServer() ? "Update" : "Add"}
+                {editingServer() ? t("mcp.updateBtn") : t("mcp.addBtn")}
               </button>
-              <button class="cancel-btn" onClick={resetForm}>Cancel</button>
+              <button class="cancel-btn" onClick={resetForm}>{t("mcp.cancelBtn")}</button>
             </div>
           </div>
         )}
 
         <div class="servers-list">
-          <h3>MCP Servers</h3>
+          <h3>{t("mcp.serversTitle")}</h3>
 
           {mergedData().length === 0 ? (
             <div class="empty-state">
-              <p>No MCP servers configured.</p>
-              <p>Add your first server to get started with MCP tools.</p>
+              <p>{t("mcp.noServers1")}</p>
+              <p>{t("mcp.noServers2")}</p>
             </div>
           ) : (
             <div class="servers-grid">
@@ -256,25 +256,26 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
                           class={`status-badge ${getStatusColor(status?.status)}`}
                           title={status?.last_error}
                         >
-                          {status?.status || "Disconnected"}
+                          {status?.status === "Connected" ? t("mcp.statusConnected") :
+                           status?.status === "Connecting" ? t("mcp.statusConnecting") : t("mcp.statusDisconnected")}
                         </span>
                       </div>
                     </div>
 
                     <div class="server-details">
                       <div class="detail-row">
-                        <strong>URL:</strong> {server.server_url}
+                        <strong>{t("mcp.urlLabel")}</strong> {server.server_url}
                       </div>
 
                       {server.oauth_client_id && (
                         <div class="detail-row">
-                          <strong>OAuth:</strong> Configured
+                          <strong>OAuth:</strong> {t("mcp.oauthConfigured")}
                         </div>
                       )}
 
                       {status?.tools && status.tools.length > 0 && (
                         <div class="detail-row">
-                          <strong>Tools:</strong> {status.tools.map(t => t.name).join(", ")}
+                          <strong>{t("mcp.toolsLabel")}</strong> {status.tools.map(t => t.name).join(", ")}
                         </div>
                       )}
                     </div>
@@ -285,14 +286,14 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
                         onClick={() => handleToggleConnection(server, status)}
                         disabled={status?.status === "Connecting"}
                       >
-                        {status?.status === "Connected" ? "Disconnect" :
-                         status?.status === "Connecting" ? "Connecting..." : "Connect"}
+                        {status?.status === "Connected" ? t("mcp.disconnectBtn") :
+                         status?.status === "Connecting" ? t("mcp.statusConnecting") : t("mcp.connectBtn")}
                       </button>
                       <button class="edit-btn" onClick={() => startEdit(server)}>
-                        Edit
+                        {t("mcp.editBtn")}
                       </button>
                       <button class="delete-btn" onClick={() => handleDelete(server.id)}>
-                        Delete
+                        {t("mcp.deleteBtn")}
                       </button>
                     </div>
                   </div>

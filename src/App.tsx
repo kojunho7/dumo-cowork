@@ -1,12 +1,15 @@
-import { Component, Show, createSignal, onMount } from "solid-js";
+import { Component, Show, createSignal, onMount, createEffect } from "solid-js";
 import { useSettings, loadSettings } from "./stores/settings";
+import { useAuth, initAuth } from "./stores/auth";
 import { Task, TaskMessage, AgentEvent, listTasks, createTask, deleteTask, runTaskAgent, getTask, getTaskMessages } from "./lib/tauri-api";
+import { useI18n } from "./i18n";
 import AgentMain from "./components/AgentMain";
 import Settings from "./components/Settings";
 import SkillsList from "./components/SkillsList";
 import MCPSettings from "./components/MCPSettings";
 import TaskSidebar from "./components/TaskSidebar";
 import TaskPanel from "./components/TaskPanel";
+import Login from "./components/Login";
 
 interface ToolExecution {
   id: number;
@@ -15,7 +18,16 @@ interface ToolExecution {
 }
 
 const App: Component = () => {
-  const { showSettings, toggleSettings, isLoading } = useSettings();
+  const { settings, showSettings, toggleSettings, isLoading } = useSettings();
+  const { authState, logout } = useAuth();
+  const { setLocale } = useI18n();
+
+  // Sync locale with settings
+  createEffect(() => {
+    if (settings()?.language) {
+      setLocale(settings().language);
+    }
+  });
 
   // UI state
   const [showSkills, setShowSkills] = createSignal(false);
@@ -30,6 +42,7 @@ const App: Component = () => {
   const [currentText, setCurrentText] = createSignal("");
 
   onMount(async () => {
+    await initAuth();
     await loadSettings();
     await refreshTasks();
   });
@@ -185,6 +198,7 @@ const App: Component = () => {
         });
         break;
       case "error":
+        console.error("Agent returned error:", (event as any).message);
         setActiveTask((prev) => {
           if (!prev) return prev;
           return { ...prev, status: "failed" };
@@ -269,58 +283,66 @@ const App: Component = () => {
   };
 
   return (
-    <div class="app agent-layout">
-      <Show when={!isLoading()} fallback={<LoadingScreen />}>
-        <TaskSidebar
-          tasks={tasks()}
-          activeTaskId={activeTask()?.id || null}
-          onSelectTask={handleSelectTask}
-          onDeleteTask={handleDeleteTask}
-          onSettingsClick={handleToggleSettings}
-          onSkillsClick={toggleSkills}
-          onMCPClick={toggleMCP}
-        />
-        <main class="main-content">
-          <Show when={showSettings()}>
-            <Settings />
-          </Show>
-          <Show when={showSkills()}>
-            <SkillsList />
-          </Show>
-          <Show when={showMCP()}>
-            <MCPSettings onClose={() => setShowMCP(false)} />
-          </Show>
-          <Show when={!showSettings() && !showSkills() && !showMCP()}>
-            <AgentMain
-              onNewTask={handleNewTask}
-              onContinueTask={handleContinueTask}
-              onNewConversation={handleNewConversation}
-              currentText={currentText()}
-              isRunning={isRunning()}
-              activeTask={activeTask()}
-              messages={taskMessages()}
-            />
-          </Show>
-        </main>
-        <aside class="task-panel-container">
-          <TaskPanel
-            task={activeTask()}
-            isRunning={isRunning()}
-            toolExecutions={toolExecutions()}
+    <div class="app" classList={{ "agent-layout": authState().isAuthenticated }}>
+      <Show when={!isLoading() && !authState().isLoading} fallback={<LoadingScreen />}>
+        <Show when={authState().isAuthenticated} fallback={<Login />}>
+          <TaskSidebar
+            tasks={tasks()}
+            activeTaskId={activeTask()?.id || null}
+            onSelectTask={handleSelectTask}
+            onDeleteTask={handleDeleteTask}
+            onSettingsClick={handleToggleSettings}
+            onSkillsClick={toggleSkills}
+            onMCPClick={toggleMCP}
+            onLogout={logout}
+            userName={authState().user?.displayName}
+            userEmail={authState().user?.email}
           />
-        </aside>
+          <main class="main-content">
+            <Show when={showSettings()}>
+              <Settings />
+            </Show>
+            <Show when={showSkills()}>
+              <SkillsList />
+            </Show>
+            <Show when={showMCP()}>
+              <MCPSettings onClose={() => setShowMCP(false)} />
+            </Show>
+            <Show when={!showSettings() && !showSkills() && !showMCP()}>
+              <AgentMain
+                onNewTask={handleNewTask}
+                onContinueTask={handleContinueTask}
+                onNewConversation={handleNewConversation}
+                currentText={currentText()}
+                isRunning={isRunning()}
+                activeTask={activeTask()}
+                messages={taskMessages()}
+              />
+            </Show>
+          </main>
+          <aside class="task-panel-container">
+            <TaskPanel
+              task={activeTask()}
+              isRunning={isRunning()}
+              toolExecutions={toolExecutions()}
+            />
+          </aside>
+        </Show>
       </Show>
     </div>
   );
 };
 
-const LoadingScreen: Component = () => (
-  <div class="loading-screen">
-    <div class="loading-content">
-      <h1>DUMO Cowork</h1>
-      <p>Loading...</p>
+const LoadingScreen: Component = () => {
+  const { t } = useI18n();
+  return (
+    <div class="loading-screen">
+      <div class="loading-content">
+        <h1>DUMO Cowork</h1>
+        <p>{t("common.loading")}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default App;

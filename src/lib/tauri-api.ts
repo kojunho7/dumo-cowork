@@ -12,6 +12,7 @@ export interface Settings {
   provider_keys: Record<string, string>;  // Provider-specific API keys
   openai_organization?: string;  // Optional OpenAI Organization ID
   openai_project?: string;  // Optional OpenAI Project ID
+  language?: string; // UI language preference
 }
 
 export interface Conversation {
@@ -131,6 +132,7 @@ export async function getSettings(): Promise<Settings> {
         max_tokens: parsed.maxTokens || 4096,
         temperature: parsed.temperature ?? 0.7,
         provider_keys: parsed.providerKeys || {},
+        language: parsed.language || "ko",
       };
     }
     return {
@@ -140,6 +142,7 @@ export async function getSettings(): Promise<Settings> {
       max_tokens: 4096,
       temperature: 0.7,
       provider_keys: {},
+      language: "ko",
     };
   }
   return invoke<Settings>("get_settings");
@@ -156,11 +159,32 @@ export async function saveSettings(settings: Settings): Promise<void> {
         maxTokens: settings.max_tokens,
         temperature: settings.temperature,
         providerKeys: settings.provider_keys,
+        language: settings.language,
       })
     );
     return;
   }
   return invoke("save_settings", { settings });
+}
+
+export async function setAuthToken(token: string | null, serverUrl?: string): Promise<void> {
+  if (!isTauri()) return;
+  return invoke("set_auth_token", { token, serverUrl: serverUrl || null });
+}
+
+export interface CoworkModel {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  isReasoning: boolean;
+}
+
+export async function fetchServerModels(token?: string | null): Promise<CoworkModel[]> {
+  if (!isTauri()) {
+    // Web fallback
+    return [];
+  }
+  return invoke<CoworkModel[]>("fetch_models", { token });
 }
 
 export async function testConnection(): Promise<string> {
@@ -178,6 +202,7 @@ export async function testConnection(): Promise<string> {
       maxTokens: settings.max_tokens,
       temperature: settings.temperature,
       providerKeys: settings.provider_keys || {},
+      language: (settings.language === "en" ? "en" : "ko") as "ko" | "en",
     };
 
     return testAIConnection(convertedSettings);
@@ -288,6 +313,7 @@ export async function sendChatMessage(
       maxTokens: settings.max_tokens,
       temperature: settings.temperature,
       providerKeys: settings.provider_keys || {},
+      language: (settings.language === "en" ? "en" : "ko") as "ko" | "en",
     };
 
     const fullText = await sendAIMessage(messages, convertedSettings, onStream);

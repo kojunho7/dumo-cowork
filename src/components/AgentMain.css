@@ -17,7 +17,6 @@
 }
 
 .agent-setup h2 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.75rem;
   font-weight: 400;
   color: var(--foreground);
@@ -55,7 +54,6 @@
 }
 
 .empty-state h2 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.75rem;
   font-weight: 400;
   color: var(--foreground);
@@ -83,7 +81,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--foreground);
   transition: all var(--transition-fast);
 }
@@ -109,7 +107,7 @@
 }
 
 .project-input input {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   padding: 0.625rem 0.875rem;
   background: var(--muted);
 }
@@ -136,7 +134,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .input-row textarea:focus {
@@ -186,7 +184,7 @@
   right: -4px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   min-width: 16px;
   height: 16px;
@@ -216,7 +214,7 @@
 }
 
 .paths-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--foreground);
   text-transform: uppercase;
@@ -261,13 +259,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.375rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   max-width: 200px;
 }
 
 .path-icon {
   flex-shrink: 0;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .path-text {
@@ -283,7 +281,7 @@
   background: transparent;
   border: none;
   color: var(--muted-foreground);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   cursor: pointer;
   padding: 0;
   width: 16px;
@@ -348,7 +346,7 @@
 }
 
 .message-label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -363,7 +361,7 @@
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .message.user .message-content {

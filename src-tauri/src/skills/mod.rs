@@ -31,40 +31,36 @@ pub fn ensure_skills_directory() -> PathBuf {
     skills_dir
 }
 
-/// Install default skills if the skills directory is empty
+/// Install default skills
 fn install_default_skills_if_needed(skills_dir: &Path) {
-    // Check if directory is empty
-    if let Ok(entries) = fs::read_dir(skills_dir) {
-        if entries.count() > 0 {
-            return; // Already has skills
+    // Only install if the specific skill doesn't exist
+    let _ = install_skill_if_missing(skills_dir, "pdf", include_str!("../../bundled-skills/pdf.skill.md"));
+    let _ = install_skill_if_missing(skills_dir, "docx", include_str!("../../bundled-skills/docx.skill.md"));
+    let _ = install_skill_if_missing(skills_dir, "xlsx", include_str!("../../bundled-skills/xlsx.skill.md"));
+    let _ = install_skill_if_missing(skills_dir, "pptx", include_str!("../../bundled-skills/pptx.skill.md"));
+}
+
+/// Helper to install a single skill only if it doesn't already exist
+fn install_skill_if_missing(skills_dir: &Path, skill_name: &str, skill_content: &str) -> Result<(), std::io::Error> {
+    let skill_dir = skills_dir.join(skill_name);
+    let skill_file = skill_dir.join("SKILL.md");
+
+    // Only create if the SKILL.md doesn't exist yet
+    if !skill_file.exists() {
+        println!("Installing missing default skill: {}", skill_name);
+        if let Err(e) = fs::create_dir_all(&skill_dir) {
+            eprintln!("Failed to create skill directory {}: {}", skill_name, e);
+            return Err(e);
+        }
+        if let Err(e) = fs::write(&skill_file, skill_content) {
+            eprintln!("Failed to write skill file {}: {}", skill_name, e);
+            return Err(e);
         }
     }
-
-    println!("Installing default skills to {}", skills_dir.display());
-
-    // Install 4 core skills
-    install_skill(skills_dir, "pdf", include_str!("../../bundled-skills/pdf.skill.md"));
-    install_skill(skills_dir, "docx", include_str!("../../bundled-skills/docx.skill.md"));
-    install_skill(skills_dir, "xlsx", include_str!("../../bundled-skills/xlsx.skill.md"));
-    install_skill(skills_dir, "pptx", include_str!("../../bundled-skills/pptx.skill.md"));
-
-    println!("Default skills installed successfully!");
+    
+    Ok(())
 }
 
-/// Install a single skill from bundled content
-fn install_skill(skills_dir: &Path, skill_name: &str, skill_content: &str) {
-    let skill_dir = skills_dir.join(skill_name);
-
-    if let Err(e) = fs::create_dir_all(&skill_dir) {
-        eprintln!("Failed to create skill directory {}: {}", skill_name, e);
-        return;
-    }
-
-    let skill_file = skill_dir.join("SKILL.md");
-    if let Err(e) = fs::write(&skill_file, skill_content) {
-        eprintln!("Failed to write skill file {}: {}", skill_name, e);
-    }
-}
 
 /// Get the skills directory path as a string for use in prompts
 pub fn get_skills_directory_path() -> String {

@@ -1,6 +1,7 @@
 import { Component, Show, For, createSignal } from "solid-js";
 import { Task, TaskMessage, openMultipleFoldersDialog } from "../lib/tauri-api";
 import { useSettings } from "../stores/settings";
+import { useI18n } from "../i18n";
 import "./AgentMain.css";
 
 interface AgentMainProps {
@@ -18,6 +19,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
   const [input, setInput] = createSignal("");
   const [selectedPaths, setSelectedPaths] = createSignal<string[]>([]);
   const [showPathsPanel, setShowPathsPanel] = createSignal(false);
+  const { t } = useI18n();
 
   // Check if we're in an existing conversation
   const isInConversation = () => props.activeTask !== null && props.messages.length > 0;
@@ -63,9 +65,9 @@ const AgentMain: Component<AgentMainProps> = (props) => {
         when={isConfigured()}
         fallback={
           <div class="agent-setup">
-            <h2>Welcome to DUMO Cowork</h2>
-            <p>Configure your API key to start using the agent</p>
-            <button onClick={toggleSettings}>Open Settings</button>
+            <h2>{t("setup.welcome")}</h2>
+            <p>{t("setup.description")}</p>
+            <button onClick={toggleSettings}>{t("setup.openSettings")}</button>
           </div>
         }
       >
@@ -76,24 +78,24 @@ const AgentMain: Component<AgentMainProps> = (props) => {
               when={props.activeTask || props.currentText || props.messages.length > 0}
               fallback={
                 <div class="empty-state">
-                  <h2>Agent Mode</h2>
-                  <p>Describe a task and the agent will create a plan and execute it step by step.</p>
+                  <h2>{t("agentMain.agentMode")}</h2>
+                  <p>{t("agentMain.agentDescription")}</p>
                   <div class="capabilities">
                     <div class="capability">
                       <span class="capability-icon">📁</span>
-                      <span>Read, write, and edit files</span>
+                      <span>{t("agentMain.capFiles")}</span>
                     </div>
                     <div class="capability">
                       <span class="capability-icon">🔍</span>
-                      <span>Search and explore codebases</span>
+                      <span>{t("agentMain.capSearch")}</span>
                     </div>
                     <div class="capability">
                       <span class="capability-icon">⚡</span>
-                      <span>Run commands and scripts</span>
+                      <span>{t("agentMain.capTerminal")}</span>
                     </div>
                     <div class="capability">
                       <span class="capability-icon">🐳</span>
-                      <span>Execute in Docker containers</span>
+                      <span>{t("agentMain.capDocker")}</span>
                     </div>
                   </div>
                 </div>
@@ -104,7 +106,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                 {(message) => (
                   <div class={`message ${message.role}`}>
                     <div class="message-label">
-                      {message.role === "user" ? "You" : "Agent"}
+                      {message.role === "user" ? t("agentMain.you") : t("agentMain.agent")}
                     </div>
                     <div class="message-content">{message.content}</div>
                   </div>
@@ -114,7 +116,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
               {/* Show current streaming text (when running a new task) */}
               <Show when={props.currentText && props.isRunning}>
                 <div class="message assistant streaming">
-                  <div class="message-label">Agent</div>
+                  <div class="message-label">{t("agentMain.agent")}</div>
                   <div class="message-content">{props.currentText}</div>
                 </div>
               </Show>
@@ -127,7 +129,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
             <Show when={showPathsPanel() && selectedPaths().length > 0}>
               <div class="selected-paths">
                 <div class="paths-header">
-                  <span class="paths-label">Mounted Folders ({selectedPaths().length})</span>
+                  <span class="paths-label">{t("agentMain.mountedFolders", { count: selectedPaths().length })}</span>
                   <button
                     type="button"
                     class="paths-close"
@@ -173,8 +175,8 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                     }
                   }}
                   placeholder={isInConversation()
-                    ? "Continue the conversation..."
-                    : "Describe a task... (e.g., 'Find and fix the authentication bug in auth.ts')"
+                    ? t("agentMain.continuePlaceholder")
+                    : t("agentMain.newPlaceholder")
                   }
                   disabled={props.isRunning}
                   rows={3}
@@ -185,7 +187,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                     class={`path-toggle ${selectedPaths().length > 0 ? "active" : ""}`}
                     onClick={handleAddFolders}
                     disabled={props.isRunning}
-                    title="Add folders to mount"
+                    title={t("agentMain.addFoldersTitle")}
                   >
                     📁
                     <Show when={selectedPaths().length > 0}>
@@ -198,13 +200,13 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                       class="new-chat-btn ghost"
                       onClick={props.onNewConversation}
                       disabled={props.isRunning}
-                      title="Start new conversation"
+                      title={t("agentMain.startNewConversation")}
                     >
                       +
                     </button>
                   </Show>
                   <button type="submit" class="submit-btn" disabled={props.isRunning || !input().trim()}>
-                    {props.isRunning ? "Running..." : isInConversation() ? "Send" : "Start Task"}
+                    {props.isRunning ? t("agentMain.running") : isInConversation() ? t("agentMain.send") : t("agentMain.startTask")}
                   </button>
                 </div>
               </div>

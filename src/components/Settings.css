@@ -15,7 +15,6 @@
 }
 
 .settings-header h2 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 400;
   color: var(--foreground);
@@ -27,7 +26,7 @@
   border: 1px solid var(--border);
   box-shadow: none;
   padding: 0.5rem 1rem;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
 }
 
 .close-btn:hover {
@@ -55,7 +54,6 @@
 }
 
 .settings-section h3 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.125rem;
   font-weight: 400;
   margin-bottom: 1.25rem;
@@ -74,14 +72,14 @@
 
 .form-group label {
   display: block;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
   color: var(--foreground);
 }
 
 .optional-tag {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--muted-foreground);
   margin-left: 0.5rem;
@@ -97,7 +95,7 @@
 
 .form-group .hint {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--muted-foreground);
   margin-top: 0.5rem;
   line-height: 1.5;
@@ -118,7 +116,7 @@
   border: 1px solid var(--border);
   margin-right: 1rem;
   box-shadow: none;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   padding: 0.5rem 1rem;
 }
 
@@ -130,13 +128,13 @@
 
 .test-success {
   color: var(--success);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
 .test-error {
   color: var(--destructive);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
@@ -210,7 +208,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .provider-badge {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   background: var(--primary);
@@ -219,7 +217,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .provider-desc {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
@@ -246,13 +244,13 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .notice-content strong {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--foreground);
   margin-bottom: 0.25rem;
 }
 
 .notice-content p {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   margin: 0;
 }
@@ -260,7 +258,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* Optgroup styling */
 select optgroup {
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted-foreground);
@@ -272,7 +270,7 @@ select optgroup option {
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--foreground);
   background: var(--background);
   padding: 0.5rem 1rem;

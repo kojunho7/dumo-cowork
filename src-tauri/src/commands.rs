@@ -12,6 +12,8 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub claude_client: Mutex<Option<ClaudeClient>>,
     pub mcp_manager: Arc<MCPManager>,
+    pub auth_token: Mutex<Option<String>>,
+    pub server_url: Mutex<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -52,6 +54,83 @@ pub fn get_platform() -> String {
 }
 
 // Settings commands
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoworkModel {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "isDefault")]
+    pub is_default: bool,
+    #[serde(rename = "isReasoning")]
+    pub is_reasoning: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelsResponse {
+    models: Vec<CoworkModel>,
+}
+
+#[command]
+pub async fn fetch_models(state: State<'_, Arc<AppState>>, token: Option<String>) -> Result<Vec<CoworkModel>, CommandError> {
+    let actual_token = match token {
+        Some(t) => t,
+        None => {
+            let auth_token = state.auth_token.lock().await.clone();
+            auth_token.ok_or_else(|| CommandError { message: "Not authenticated".to_string() })?
+        }
+    };
+    
+    let server_url = state.server_url.lock().await.clone();
+    let srv_url = if server_url.is_empty() {
+        "https://works.dumo.kr".to_string()
+    } else {
+        server_url
+    };
+    let srv_url = srv_url.trim_end_matches('/');
+
+    let client = reqwest::Client::builder()
+        .user_agent("Tauri-DumoCowork")
+        .build()
+        .map_err(|e| CommandError { message: e.to_string() })?;
+
+    let url = format!("{}/api/cowork/models", srv_url);
+    println!("[fetch_models] fetching from URL: {}", url);
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", actual_token))
+        .header("x-dumo-client", "desktop-app")
+        .send()
+        .await
+        .map_err(|e| {
+            println!("[fetch_models] HTTP error: {}", e);
+            CommandError { message: e.to_string() }
+        })?;
+
+    let status = response.status();
+    println!("[fetch_models] Response status: {}", status);
+
+    if status == 401 {
+        return Err(CommandError { message: "Authentication expired".to_string() });
+    }
+
+    if !status.is_success() {
+        let text = response.text().await.unwrap_or_default();
+        println!("[fetch_models] Failed response text: {}", text);
+        return Err(CommandError { message: format!("Failed to fetch models: {} - {}", status, text) });
+    }
+
+    let text = response.text().await.map_err(|e| CommandError { message: e.to_string() })?;
+    println!("[fetch_models] Response JSON: {}", text);
+
+    let data: ModelsResponse = serde_json::from_str(&text)
+        .map_err(|e| {
+            println!("[fetch_models] Map error: {}", e);
+            CommandError { message: format!("Failed to map json: {}", e) }
+        })?;
+
+    println!("[fetch_models] Fetched {} models", data.models.len());
+    Ok(data.models)
+}
+
 #[command]
 pub fn get_settings(state: State<'_, Arc<AppState>>) -> Result<Settings, CommandError> {
     let settings = state.db.get_settings()?;
@@ -91,6 +170,54 @@ pub async fn save_settings(
 }
 
 #[command]
+pub async fn set_auth_token(
+    state: State<'_, Arc<AppState>>,
+    token: Option<String>,
+    server_url: Option<String>,
+) -> Result<(), CommandError> {
+    let mut auth = state.auth_token.lock().await;
+    *auth = token;
+    if let Some(url) = server_url {
+        let mut srv = state.server_url.lock().await;
+        *srv = url;
+    }
+    Ok(())
+}
+
+async fn get_llm_credentials(
+    settings: &crate::database::Settings,
+    state: &State<'_, Arc<AppState>>,
+) -> (String, String, String, bool) {
+    let auth_token = state.auth_token.lock().await.clone();
+    let server_url = state.server_url.lock().await.clone();
+
+    // Force infer provider from model name (ignore saved provider string)
+    let mut settings_clone = settings.clone();
+    settings_clone.provider = "".to_string();
+    let provider = settings_clone.get_provider();
+
+    if let Some(token) = auth_token {
+        let srv_url = if server_url.is_empty() {
+            "https://works.dumo.kr".to_string()
+        } else {
+            server_url
+        };
+        let srv_url = srv_url.trim_end_matches('/');
+        // Using the newly created transparent proxy for agent commands
+        let base_url = format!("{}/api/cowork/agent/{}", srv_url, provider);
+        
+        (token, base_url, provider, true)
+    } else {
+        (
+            settings.api_key.clone(),
+            settings.base_url.clone(),
+            provider,
+            false,
+        )
+    }
+}
+
+#[command]
 pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, CommandError> {
     use crate::llm_client::{LLMClient, Message};
 
@@ -104,16 +231,18 @@ pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, 
     println!("[test_connection] is_local_provider: {}, allows_empty_api_key: {}",
         settings.is_local_provider(), settings.allows_empty_api_key());
 
-    if settings.api_key.is_empty() && !settings.allows_empty_api_key() {
+    let (api_key, base_url, provider, is_authenticated) = get_llm_credentials(&settings, &state).await;
+
+    if api_key.is_empty() && !settings.allows_empty_api_key() && !is_authenticated {
         return Ok("No API key configured".to_string());
     }
 
     // Choose test method based on provider type
-    if settings.is_local_provider() {
+    if settings.is_local_provider() && !is_authenticated {
         // Local service - use LLMClient to check connection
         let llm_client = LLMClient::new(
             String::new(), // Local services don't need API key
-            Some(settings.base_url.clone()),
+            Some(base_url),
             None,
             Some(&settings.model),
         );
@@ -125,12 +254,10 @@ pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, 
         }
     } else {
         // Cloud service - check provider type
-        let provider = settings.get_provider();
-
         match provider.as_str() {
             "anthropic" => {
                 // Anthropic - use ClaudeClient
-                let client = ClaudeClient::new(settings.api_key, Some(settings.base_url));
+                let client = ClaudeClient::new(api_key, Some(base_url));
                 let messages = vec![ClaudeMessage {
                     role: "user".to_string(),
                     content: "Hi".to_string(),
@@ -144,8 +271,8 @@ pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, 
             "openai" => {
                 // OpenAI - test with actual API request using LLMClient
                 let llm_client = LLMClient::new_with_openai_headers(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
+                    api_key,
+                    Some(base_url),
                     Some("openai"),
                     Some(&settings.model),
                     settings.openai_organization.clone(),
@@ -166,8 +293,8 @@ pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, 
             "google" => {
                 // Google Gemini - test with actual API request
                 let llm_client = LLMClient::new(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
+                    api_key,
+                    Some(base_url),
                     Some("google"),
                     Some(&settings.model),
                 );
@@ -185,8 +312,8 @@ pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, 
             _ => {
                 // Other cloud services - try sending a test message
                 let llm_client = LLMClient::new(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
+                    api_key,
+                    Some(base_url),
                     None,
                     Some(&settings.model),
                 );
@@ -429,8 +556,10 @@ pub async fn run_agent(
 ) -> Result<String, CommandError> {
     let settings = state.db.get_settings()?;
 
-    // Check if API Key is needed (local services don't need it)
-    if settings.api_key.is_empty() && !settings.allows_empty_api_key() {
+    let (api_key, base_url, provider_id, is_authenticated) = get_llm_credentials(&settings, &state).await;
+
+    // Check if API Key is needed (local services don't need it or handled by proxy)
+    if api_key.is_empty() && !settings.allows_empty_api_key() && !is_authenticated {
         return Err(CommandError {
             message: "API key not configured".to_string(),
         });
@@ -465,13 +594,10 @@ pub async fn run_agent(
     }
     config.project_path = request.project_path;
 
-    // Get provider info
-    let provider_id = settings.get_provider();
-
     // Create agent loop with provider
     let agent = AgentLoop::new_with_provider(
-        settings.api_key,
-        settings.base_url,
+        api_key,
+        base_url,
         config,
         settings.model,
         settings.max_tokens,
@@ -525,7 +651,9 @@ pub async fn send_chat_with_tools(
 
     let settings = state.db.get_settings()?;
 
-    if settings.api_key.is_empty() && !settings.allows_empty_api_key() {
+    let (api_key, base_url, provider, is_authenticated) = get_llm_credentials(&settings, &state).await;
+
+    if api_key.is_empty() && !settings.allows_empty_api_key() && !is_authenticated {
         return Err(CommandError {
             message: "API key not configured".to_string(),
         });
@@ -544,7 +672,6 @@ pub async fn send_chat_with_tools(
     if !request.enable_tools {
         use crate::llm_client::{LLMClient, Message as LLMMessage};
 
-        let provider = settings.get_provider();
         let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
 
         let window_clone = window.clone();
@@ -564,7 +691,7 @@ pub async fn send_chat_with_tools(
                         content: m.content.clone(),
                     })
                     .collect();
-                let client = ClaudeClient::new(settings.api_key.clone(), Some(settings.base_url.clone()));
+                let client = ClaudeClient::new(api_key, Some(base_url));
                 client
                     .send_message_stream(
                         claude_messages,
@@ -585,8 +712,8 @@ pub async fn send_chat_with_tools(
                     })
                     .collect();
                 let llm_client = LLMClient::new_with_openai_headers(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
+                    api_key,
+                    Some(base_url),
                     Some(&provider),
                     Some(&settings.model),
                     settings.openai_organization.clone(),
@@ -671,7 +798,16 @@ Be concise and helpful. Explain what you're doing when using tools.{}"#, mcp_inf
         })
         .collect();
 
-    let client = reqwest::Client::new();
+    // Configure client with default bypass headers
+    use reqwest::header::{HeaderMap, HeaderValue};
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = HeaderValue::from_str("desktop-app") {
+        headers.insert("x-dumo-client", val);
+    }
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
     let mut final_text = String::new();
     let mut turn = 0;
     let max_turns = config.max_turns;
@@ -1142,10 +1278,15 @@ pub async fn run_task_agent(
 ) -> Result<String, CommandError> {
     let settings = state.db.get_settings()?;
 
-    // Check if API Key is needed (local services don't need it)
-    if settings.api_key.is_empty() && !settings.allows_empty_api_key() {
+    let (api_key, base_url, provider_id, is_authenticated) = get_llm_credentials(&settings, &state).await;
+
+    // Check if API Key is needed (local services don't need it or handled by proxy)
+    if api_key.is_empty() && !settings.allows_empty_api_key() && !is_authenticated {
+        let err_msg = "API key not configured".to_string();
+        eprintln!("run_task_agent early error: {}", err_msg);
+        let _ = state.db.update_task_status(&request.task_id, "failed");
         return Err(CommandError {
-            message: "API key not configured".to_string(),
+            message: err_msg,
         });
     }
 
@@ -1186,13 +1327,10 @@ pub async fn run_task_agent(
     }
     config.project_path = request.project_path;
 
-    // Get provider info
-    let provider_id = settings.get_provider();
-
     // Create agent loop with provider
     let agent = AgentLoop::new_with_provider(
-        settings.api_key,
-        settings.base_url,
+        api_key,
+        base_url,
         config,
         settings.model,
         settings.max_tokens,
@@ -1258,7 +1396,8 @@ pub async fn run_task_agent(
                 AgentEvent::Done { .. } => {
                     let _ = db.update_task_status(&task_id, "completed");
                 }
-                AgentEvent::Error { .. } => {
+                AgentEvent::Error { message } => {
+                    eprintln!("Agent emitted error event: {}", message);
                     let _ = db.update_task_status(&task_id, "failed");
                 }
                 _ => {}
@@ -1290,7 +1429,8 @@ pub async fn run_task_agent(
             Ok("Task completed successfully".to_string())
         }
         Err(e) => {
-            state.db.update_task_status(&request.task_id, "failed")?;
+            eprintln!("Error executing task agent: {}", e);
+            let _ = state.db.update_task_status(&request.task_id, "failed");
             Err(CommandError { message: e })
         }
     }

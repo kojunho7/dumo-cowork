@@ -18,7 +18,6 @@
 
 .agent-setup h2,
 .empty-agent h2 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 2rem;
   margin-bottom: 0.75rem;
   color: var(--foreground);
@@ -32,7 +31,7 @@
 }
 
 .tools-list {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--muted-foreground);
   background: var(--card);
   padding: 0.75rem 1rem;
@@ -63,7 +62,7 @@
 }
 
 .text-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -75,7 +74,7 @@
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--foreground);
 }
 
@@ -86,7 +85,7 @@
 }
 
 .tools-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -98,7 +97,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .tool-execution.running {
@@ -127,7 +126,7 @@
 }
 
 .tool-status {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
 }
@@ -150,7 +149,7 @@
 .tool-input {
   color: var(--muted-foreground);
   font-family: monospace;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
 
@@ -171,7 +170,7 @@
   padding: 0.75rem;
   margin-top: 0.5rem;
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   overflow-x: auto;
   white-space: pre-wrap;
@@ -217,7 +216,7 @@
 }
 
 .project-path-input label {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--muted-foreground);
   white-space: nowrap;
 }
@@ -225,7 +224,7 @@
 .project-path-input input {
   flex: 1;
   padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-family: monospace;
 }
 

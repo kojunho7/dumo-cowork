@@ -66,8 +66,18 @@ pub struct ClaudeClient {
 
 impl ClaudeClient {
     pub fn new(api_key: String, base_url: Option<String>) -> Self {
+        use reqwest::header::{HeaderMap, HeaderValue};
+        let mut headers = HeaderMap::new();
+        if let Ok(val) = HeaderValue::from_str("desktop-app") {
+            headers.insert("x-dumo-client", val);
+        }
+        let client = Client::builder()
+            .default_headers(headers)
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
         Self {
-            client: Client::new(),
+            client,
             api_key,
             base_url: base_url.unwrap_or_else(|| "https://api.anthropic.com".to_string()),
         }

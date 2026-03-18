@@ -308,6 +308,8 @@ impl LLMClient {
     fn build_headers(&self) -> Vec<(String, String)> {
         let mut headers = vec![
             ("Content-Type".to_string(), "application/json".to_string()),
+            // Add custom header to bypass Vercel WAF Challenge (Bot Protection)
+            ("x-dumo-client".to_string(), "desktop-app".to_string()),
         ];
 
         match self.provider_config.auth_type {

@@ -31,6 +31,8 @@ pub fn run() {
         db: db_arc,
         claude_client: Mutex::new(None),
         mcp_manager,
+        auth_token: Mutex::new(None),
+        server_url: Mutex::new("https://works.dumo.kr".to_string()),
     });
 
     tauri::Builder::default()
@@ -41,7 +43,9 @@ pub fn run() {
             commands::get_platform,
             commands::get_settings,
             commands::save_settings,
+            commands::set_auth_token,
             commands::test_connection,
+            commands::fetch_models,
             commands::list_conversations,
             commands::create_conversation,
             commands::update_conversation_title,

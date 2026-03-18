@@ -26,7 +26,6 @@
 }
 
 .logo-text {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 400;
   margin: 0;
@@ -35,7 +34,6 @@
 }
 
 .logo {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 1rem;
@@ -60,7 +58,7 @@
   color: var(--muted-foreground);
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -133,7 +131,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--foreground);
 }
 
@@ -142,7 +140,7 @@
   background: transparent;
   color: var(--muted-foreground);
   padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   box-shadow: none;
 }
 
@@ -170,7 +168,7 @@
   color: var(--foreground);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;

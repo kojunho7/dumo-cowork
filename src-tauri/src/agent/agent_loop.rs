@@ -70,8 +70,19 @@ impl AgentLoop {
             provider_config.base_url = base_url.clone();
         }
 
+        // Configure client with default bypass headers
+        use reqwest::header::{HeaderMap, HeaderValue};
+        let mut headers = HeaderMap::new();
+        if let Ok(val) = HeaderValue::from_str("desktop-app") {
+            headers.insert("x-dumo-client", val);
+        }
+        let client = Client::builder()
+            .default_headers(headers)
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
         Self {
-            client: Client::new(),
+            client,
             api_key,
             base_url: provider_config.base_url.clone(),
             config,
@@ -246,6 +257,8 @@ impl AgentLoop {
         // Add authentication
         if !self.api_key.is_empty() {
             req = req.header("x-api-key", &self.api_key);
+            // Support proxy endpoints that require Bearer auth
+            req = req.header("Authorization", format!("Bearer {}", self.api_key));
         }
 
         let response = req
@@ -450,9 +463,15 @@ impl AgentLoop {
         // Convert request format to Google format
         let google_request = self.convert_to_google_format(request);
 
-        let response = self.client.post(&url)
-            .header("Content-Type", "application/json")
-            .header("x-goog-api-key", &self.api_key)
+        let mut req = self.client.post(&url)
+            .header("Content-Type", "application/json");
+
+        if !self.api_key.is_empty() {
+            req = req.header("x-goog-api-key", &self.api_key)
+                     .header("Authorization", format!("Bearer {}", self.api_key));
+        }
+
+        let response = req
             .json(&google_request)
             .send()
             .await
